@@ -1,4 +1,3 @@
 # worldgen
 Randomized world generator, written in rust
-
-https://travis-ci.org/NLincoln/worldgen.svg?branch=master
+[![Build Status](https://travis-ci.org/NLincoln/worldgen.svg?branch=master)](https://travis-ci.org/NLincoln/worldgen)
