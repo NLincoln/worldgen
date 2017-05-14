@@ -1,3 +1,7 @@
+extern crate rand;
+
+use rand::{Rng,ThreadRng};
+
 #[derive(Debug)]
 struct Vector2<T> {
     x: T,
@@ -15,9 +19,18 @@ impl<T> Vector2<T> {
 
 type Vector2u = Vector2<u32>;
 
-#[derive(Debug)]
 struct Tile {
     is_filled: bool
+}
+
+impl std::fmt::Debug for Tile {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let val = match self.is_filled {
+            true => 'X',
+            false => '_'
+        };
+        write!(f, "{}", val)
+    }
 }
 
 #[derive(Debug)]
@@ -25,7 +38,6 @@ struct World {
     grid: Grid<Tile>
 }
 
-#[derive(Debug)]
 struct Grid<T> {
     size: Vector2u,
     map: std::vec::Vec<T>
@@ -40,20 +52,35 @@ impl<T> Grid<T> {
     }
 }
 
+impl<T> std::fmt::Debug for Grid<T> where T: std::fmt::Debug {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        for y in 0..self.size.y {
+            for x in 0..self.size.x {
+                if let Err(e) = write!(f, "{:?}", self.at(Vector2u::new(x, y))) {
+                    return Err(e);
+                }
+            }
+            print!("\n");
+        }
+        return Ok(());
+    }
+}
+
 
 impl World {
     fn new(size: Vector2u) -> World {
-        fn create_tile() -> Tile {
+        fn create_tile(rng: &mut ThreadRng) -> Tile {
             Tile {
-                is_filled: false
+                is_filled: rng.gen::<bool>()
             }
         }
 
         let mut map_vector = std::vec::Vec::<Tile>::new();
+        let mut rng = rand::thread_rng();
         map_vector.reserve_exact((size.x * size.y) as usize);
         for _ in 0..size.x {
             for _ in 0..size.y {
-                map_vector.push(create_tile());
+                map_vector.push(create_tile(&mut rng));
             }
         }
         World {
@@ -66,8 +93,8 @@ impl World {
 }
 
 fn main() {
-    World::new(Vector2u::new(10, 10));
-    println!("Hello, world!");
+    let world = World::new(Vector2u::new(10, 10));
+    println!("{:?}", world.grid);
 }
 
 #[cfg(test)]
