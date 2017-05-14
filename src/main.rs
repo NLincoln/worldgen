@@ -2,10 +2,19 @@ extern crate rand;
 
 use rand::{Rng,ThreadRng};
 
-#[derive(Debug)]
+#[derive(Debug,Copy,Clone)]
 struct Vector2<T> {
     x: T,
     y: T
+}
+
+macro_rules! vec2u {
+    ($x: expr, $y: expr) => (
+        Vector2u {
+            x: $x,
+            y: $y
+        }
+    )
 }
 
 impl<T> Vector2<T> {
@@ -44,9 +53,22 @@ struct Grid<T> {
 }
 
 impl<T> Grid<T> {
+    fn get_slice(&self, position: Vector2u, size: Vector2u) -> Grid<&T> {
+        let mut grid = Grid {
+            size: size,
+            map: Vec::new()
+        };
+        for y in 0..size.y {
+            for x in 0..size.x {
+                grid.map.push(self.at(vec2u!(position.x + x, position.y + y)));
+            }
+        }
+        return grid;
+    }
+
     fn at(&self, pos: Vector2u) -> &T {
         if pos.x > self.size.x || pos.y > self.size.y {
-            panic!("Position provided to World::at that is out of bounds");
+            panic!("Position provided to Grid::at that is out of bounds");
         }
         &self.map[((pos.y * self.size.x) + pos.x) as usize]
     }
@@ -65,7 +87,6 @@ impl<T> std::fmt::Debug for Grid<T> where T: std::fmt::Debug {
         return Ok(());
     }
 }
-
 
 impl World {
     fn new(size: Vector2u) -> World {
@@ -98,17 +119,30 @@ fn main() {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
 
     fn create_grid_uint() -> Grid<u32> {
         Grid {
             size: Vector2u {
                 x: 4,
-                y: 2
+                y: 4
             },
-            map: vec![0, 1, 2, 3, 4, 5, 6, 7, 8]
+            map: vec![
+                0,  1,   2,  3,
+                4,  5,   6,  7,
+                8,  9,  10, 11,
+                12, 13, 14, 15
+            ]
         }
+    }
+
+    #[test]
+    fn grid_slice_method_works() {
+        let grid = create_grid_uint();
+        let slice = grid.get_slice(Vector2u::new(1, 1), Vector2u::new(2, 2));
+        assert_eq!(*slice.at(vec2u!(0, 0)), grid.at(vec2u!(1, 1)));
+        assert_eq!(*slice.at(vec2u!(1, 0)), grid.at(vec2u!(2, 1)));
     }
 
     #[test]
@@ -116,7 +150,7 @@ mod test {
         let grid = create_grid_uint();
         assert_eq!(*grid.at(Vector2u::new(1, 1)), 5);
         assert_eq!(*grid.at(Vector2u::new(0, 0)), 0);
-        assert_eq!(*grid.at(Vector2u::new(4, 0)), 4);
+        assert_eq!(*grid.at(Vector2u::new(3, 0)), 3);
     }
 
     #[test]
