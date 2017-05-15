@@ -67,10 +67,10 @@ impl<T> Grid<T> {
     }
 
     fn at(&self, pos: Vector2u) -> &T {
-        if pos.x > self.size.x || pos.y > self.size.y {
-            panic!("Position provided to Grid::at that is out of bounds");
+        match self.map.get(((pos.y * self.size.x) + pos.x) as usize) {
+            Some(val) => val,
+            None => panic!("Position provided to Grid::at that is out of bounds")
         }
-        &self.map[((pos.y * self.size.x) + pos.x) as usize]
     }
 
     fn assign(&mut self, pos: Vector2u, val: T) {
@@ -95,16 +95,14 @@ impl<T> std::fmt::Debug for Grid<T> where T: std::fmt::Debug {
     }
 }
 
-fn carve_room<T, F>(grid: &mut Grid<T>, position: Vector2u, size: Vector2u, f: F) where F: Fn(&T) -> T {
-    // let get_pos = |x: u32, y: u32| vec2u!(position.x + x, position.y + y);
+fn carve_room<T, F>(grid: &mut Grid<T>, position: Vector2u, size: Vector2u, f: F) where F: Fn(&Grid<T>, Vector2u) -> T {
+    let get_pos = |x: u32, y: u32| vec2u!(position.x + x, position.y + y);
 
-    // for y in 0..size.y {
-    //     for x in 0..size.x {
-    //         let val = grid.at(get_pos(x, y));
-    //         grid.assign(get_pos(x, y), f(val));
-    //     }
-    // }
-    unimplemented!();
+    for y in 0..size.y {
+        for x in 0..size.x {
+            grid.assign(get_pos(x, y), f(&grid, get_pos(x, y)));
+        }
+    }
 }
 
 impl World {
@@ -159,10 +157,10 @@ mod tests {
     #[test]
     fn test_carve_grid() {
         let mut grid = create_grid_uint();
-        carve_room(&mut grid, vec2u!(1, 1), vec2u!(2, 2), |val| (val * 0));
+        carve_room(&mut grid, vec2u!(1, 1), vec2u!(2, 2), |grid, pos| (*grid.at(pos) * 0));
         assert_eq!(*grid.at(vec2u!(1, 1)), 0);
         assert_eq!(*grid.at(vec2u!(0, 1)), 4);
-        carve_room(&mut grid, vec2u!(0, 0), vec2u!(4, 4), |val| (val + 1));
+        carve_room(&mut grid, vec2u!(0, 0), vec2u!(4, 4), |grid, pos| (*grid.at(pos) + 1));
         assert_eq!(*grid.at(vec2u!(0, 0)), 1);
 
     }
