@@ -72,6 +72,13 @@ impl<T> Grid<T> {
         }
         &self.map[((pos.y * self.size.x) + pos.x) as usize]
     }
+
+    fn assign(&mut self, pos: Vector2u, val: T) {
+        if pos.x > self.size.x || pos.y > self.size.y {
+            panic!("Position provided to Grid::assign that is out of bounds");
+        }
+        self.map[((pos.y * self.size.x) + pos.x) as usize] = val;
+    }
 }
 
 impl<T> std::fmt::Debug for Grid<T> where T: std::fmt::Debug {
@@ -86,6 +93,18 @@ impl<T> std::fmt::Debug for Grid<T> where T: std::fmt::Debug {
         }
         return Ok(());
     }
+}
+
+fn carve_room<T, F>(grid: &mut Grid<T>, position: Vector2u, size: Vector2u, f: F) where F: Fn(&T) -> T {
+    // let get_pos = |x: u32, y: u32| vec2u!(position.x + x, position.y + y);
+
+    // for y in 0..size.y {
+    //     for x in 0..size.x {
+    //         let val = grid.at(get_pos(x, y));
+    //         grid.assign(get_pos(x, y), f(val));
+    //     }
+    // }
+    unimplemented!();
 }
 
 impl World {
@@ -114,7 +133,7 @@ impl World {
 }
 
 fn main() {
-    let world = World::new(Vector2u::new(10, 10));
+    let world = World::new(vec2u!(100, 100));
     println!("{:?}", world.grid);
 }
 
@@ -138,11 +157,30 @@ mod tests {
     }
 
     #[test]
+    fn test_carve_grid() {
+        let mut grid = create_grid_uint();
+        carve_room(&mut grid, vec2u!(1, 1), vec2u!(2, 2), |val| (val * 0));
+        assert_eq!(*grid.at(vec2u!(1, 1)), 0);
+        assert_eq!(*grid.at(vec2u!(0, 1)), 4);
+        carve_room(&mut grid, vec2u!(0, 0), vec2u!(4, 4), |val| (val + 1));
+        assert_eq!(*grid.at(vec2u!(0, 0)), 1);
+
+    }
+
+    #[test]
     fn grid_slice_method_works() {
         let grid = create_grid_uint();
         let slice = grid.get_slice(Vector2u::new(1, 1), Vector2u::new(2, 2));
         assert_eq!(*slice.at(vec2u!(0, 0)), grid.at(vec2u!(1, 1)));
         assert_eq!(*slice.at(vec2u!(1, 0)), grid.at(vec2u!(2, 1)));
+    }
+
+    #[test]
+    fn grid_assign_method() {
+        let mut grid = create_grid_uint();
+        let pos = vec2u!(1, 1);
+        grid.assign(pos, 4);
+        assert_eq!(*grid.at(pos), 4);
     }
 
     #[test]
